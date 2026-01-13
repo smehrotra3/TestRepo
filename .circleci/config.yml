@@ -21,7 +21,19 @@ jobs:
       - run:
           name: "Say hello"
           command: "echo Hello, World!"
-
+  run-java-tests:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run:
+          name: Run Java Unit Tests
+          command: |
+            mkdir -p test-results
+            TESTFILES=$(circleci tests glob "src/test/java/**/*.java")
+            echo "$TESTFILES" | circleci tests run --command="xargs javac" --split-by=timings
+      - store_test_results:
+          path: test-results
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
@@ -29,3 +41,6 @@ workflows:
     # Inside the workflow, you define the jobs you want to run.
     jobs:
       - say-hello
+  test-workflow:
+    jobs:
+      - run-java-tests
