@@ -34,6 +34,18 @@ jobs:
             echo "$TESTFILES" | circleci tests run --command="xargs javac" --split-by=timings
       - store_test_results:
           path: test-results
+  run-mvn-tests:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run:
+          name: Run Java Unit Tests
+          command: |
+            mkdir -p test-results
+            mvn test
+      - store_test_results:
+          path: test-results
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
@@ -44,3 +56,6 @@ workflows:
   test-workflow:
     jobs:
       - run-java-tests
+  test-workflow-mvn:
+    jobs:
+      - run-mvn-tests
