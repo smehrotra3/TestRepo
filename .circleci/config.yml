@@ -34,18 +34,28 @@ jobs:
             echo "$TESTFILES" | circleci tests run --command="xargs javac" --split-by=timings
       - store_test_results:
           path: test-results
-  run-mvn-tests:
+  test-java:
     docker:
-      - image: cimg/openjdk:17.0
+      - image: cimg/openjdk:23.0.2
+    working_directory: ~/project/springboot-service
     steps:
-      - checkout
+      - checkout:
+          path: ~/project
       - run:
-          name: Run Java Unit Tests
-          command: |
-            mkdir -p test-results
-            mvn test
+          name: Calculate cache key
+          command: |-
+            find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
+                    sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
+      - restore_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+      - run:
+          command: mvn verify
       - store_test_results:
-          path: test-results
+          path: target/surefire-reports
+      - save_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+          paths:
+            - ~/.m2/repository
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
@@ -58,4 +68,4 @@ workflows:
       - run-java-tests
   test-workflow-mvn:
     jobs:
-      - run-mvn-tests
+      - test-java
